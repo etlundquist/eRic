@@ -1,0 +1,17 @@
+Package: eRic
+Title: Eric's R functions developed while a summer analytics intern at Enova
+Version: 0.0.0.9000
+Authors@R: person("Eric", "Lundquist", email = "e.t.lundquist@gmail.com", role = c("aut", "cre"))
+Description: A collection of functions for feature creation, exploratory data analysis, 
+    feature selection, and model validation developed while building a new credit model.
+Depends:
+    R (>= 3.2.2)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    magrittr,
+    dplyr,
+    tidyr,
+    stringr
+RoxygenNote: 5.0.1
