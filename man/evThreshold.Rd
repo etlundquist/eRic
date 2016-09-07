@@ -2,12 +2,12 @@
 % Please edit documentation in R/evThreshold.R
 \name{evThreshold}
 \alias{evThreshold}
-\title{Classification probability threshold optimization based on confusion matrix costs/benefits}
+\title{Classification Probability Threshold Optimization Based on Confusion Matrix Costs/Benefits}
 \usage{
 evThreshold(response, pprob, crMatrix, plot.points = 100)
 }
 \arguments{
-\item{response}{(numeric) vector of actual class values (as a binary numeric vector)}
+\item{response}{(numeric) vector of actual class values (as a binary numeric variable)}
 
 \item{pprob}{(numeric) vector of model predicted probabilities}
 
@@ -23,11 +23,11 @@ a list containing the following elements:
 }
 \description{
 Calculate an optimal probability threshold for a classification problem based on 
-the actual class distribution, model predicted probabilities, and the costs/benefits 
+the actual class distribution, the model predicted probabilities, and the costs/benefits 
 associated with each cell in the confusion matrix.
 }
 \details{
-Given actual class values and model predicted probabilities you can optimize the classification threshold with respect to 
+Given actual class values and model predicted probabilities one can optimize the classification threshold with respect to 
 the costs and benefits associated with correctly identifying positive and negative cases, and making Type I and Type II errors. 
 This is useful when overall classification accuracy doesn't align with the goals of the modeling process and you can reasonably
 estimate the costs and benefits associated with each cell in the confusion matrix. Given this information the optimization 
@@ -35,32 +35,32 @@ problem then becomes one of maximizing the expected value of a new case based on
 the actual class distribution (i.e. proportion of positive cases); c. the benefits and costs associated with the 
 new case ending up in each cell of the confusion matrix. The expected value of a new case can be expressed as:
 
-EV = pr(P) * [TPR*R(TP) - FNR*C(FN)] + pr(N) * [TNR*R(TN) - FPR*C(FP)]
+\eqn{EV = pr(P) * [TPR*R(TP) - FNR*C(FN)] + pr(N) * [TNR*R(TN) - FPR*C(FP)]}
 
 Where:
-
-pr(P) - proportion of positive cases
-pr(N) - proportion of negative cases
-TPR   - True Positive Rate
-R(TP) - Revenue/Utility associated with a True Positive
-FNR   - False Negative Rate
-C(FN) - Cost/Utility associated with a False Negative
-TNR   - True Negative Rate
-R(TN) - Revenue/Utility associated with a True Negative
-FPR   - False Positive Rate
-C(FP) - Cost/Utility associated with a False Positive
-
+\itemize{
+\item{\strong{pr(P)} - proportion of positive cases}
+\item{\strong{pr(N)} - proportion of negative cases}
+\item{\strong{TPR}   - True Positive Rate}
+\item{\strong{R(TP)} - Revenue/Utility associated with a True Positive}
+\item{\strong{FNR}   - False Negative Rate}
+\item{\strong{C(FN)} - Cost/Utility associated with a False Negative}
+\item{\strong{TNR}   - True Negative Rate}
+\item{\strong{R(TN)} - Revenue/Utility associated with a True Negative}
+\item{\strong{FPR}   - False Positive Rate}
+\item{\strong{C(FP)} - Cost/Utility associated with a False Positive}
+}
 You need to specify the benefits/costs associated with each confusion matrix cell in \code{crMatrix}
-where the rows correspond to actual class values and the columns correspond to predicted class values. 
-This implies \code{crMatrix[2,2]} is the benefit associated with correctly identifying positive cases, and
-\code{crMatrix[1,2]} is the cost associated with mistakenly classifying a negative case as a positive one.
-Diagonal entries (benefits) will typically be greater than or equal to zero, and off-diagonal entries (costs) 
-will typically be less than or equal to zero. 
+where the \strong{rows} correspond to \strong{actual class values} and the \strong{columns} correspond to 
+\strong{predicted class values}. This implies \code{crMatrix[2,2]} is the benefit associated with correctly 
+identifying positive cases, and \code{crMatrix[1,2]} is the cost associated with mistakenly classifying a 
+negative case as a positive one. Diagonal entries (benefits) will typically be greater than or equal to zero, 
+and off-diagonal entries (costs) will typically be less than or equal to zero (costs expressed as negative numbers).
 
 The function will return the optimal classification threshold, the unit expected value given that threshold,
 and a ggplot2 object containing series for Sensitivity, Specificity, Accuracy, and Normalized Expected Value
-with respect to different probability thresholds. The expected value series is normalized to [0,1] to display
-on the same plot.
+with respect to different probability thresholds. The expected value series is normalized to [0,1] so that it
+can be displayed on the same plot as the other metrics.
 }
 \examples{
 library(gbm)
@@ -73,8 +73,10 @@ credit  <- credit[,-nearZeroVar(credit)]
 gbm.fit <- gbm(Class ~ ., data = credit, n.trees = 100, shrinkage = 0.1, cv.folds = 5, distribution = 'bernoulli')
 pprob   <- predict(gbm.fit, n.trees = gbm.perf(gbm.fit), type = 'response')
 
-crMatrix <- matrix(c(0, -1, -3, 2), nrow = 2)
+crMatrix <- matrix(c(0, -2, -4, 2), nrow = 2)
 # matrix cells: [r(TN), c(FN), c(FP), r(TP)]
+# true negatives yield no benefit, false negatives are lost potential good customers,
+# false positives are approved bad customers, and true positives are approved good customers
 
 res <- evThreshold(credit$Class, pprob, crMatrix)
 res$plot.metrics

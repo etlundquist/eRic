@@ -18,6 +18,8 @@
 #' res <- plotKS(a, b, la = 'Non-Defaults', lb = 'Defaults')
 #' res$ks.stat
 #' res$ks.plot
+#' 
+#' # compare with internal stats function
 #' ks.test(a, b)
 #' @export
 

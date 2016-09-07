@@ -1,4 +1,4 @@
-#' Response (Y) Statistics Within Levels/Bins of a Predictor (X)
+#' Response (y) Statistics Within Levels/Bins of a Predictor (x)
 #' 
 #' Statistics for \code{y} are plotted with respect to each level or bin of \code{x}. Plotted 
 #' statistics can be proportions, log-odds, or weight-of-evidence values. Bins can be created 
@@ -26,7 +26,7 @@
 #' the returned plots will correspond to the index positions of the levels of x (and not 
 #' the factor labels themselves) in each bin. It's generally not a good idea to use recursive 
 #' partitioning with more than 50 factor levels. If x is a numeric variable the x-axis labels 
-#' will be the range cutpoints for each bin.
+#' will be the range cutpoints for each bin created via recursive partitioning.
 #' 
 #' If \code{xsplit=c('uniform','quantile')} and x is a factor variable its levels are used 
 #' directly as bins and the \code{nbins} argument will be ignored. If x is a numeric variable 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/bootImp.R
 \name{bootImp}
 \alias{bootImp}
-\title{Bootstrapped feature importance via several filter/model-based methods}
+\title{Bootstrapped Feature Importance via Filter/Model-Based Selection Methods}
 \usage{
 bootImp(df, y, methods = c("iv", "chi2", "rf", "gbm", "be", "bl"),
   nboot = 10, nbins = 10, nplot = 25, nabin = FALSE, control = list())
@@ -12,7 +12,7 @@ bootImp(df, y, methods = c("iv", "chi2", "rf", "gbm", "be", "bl"),
 
 \item{y}{(character) binary response variable name (must be a variable within \code{df})}
 
-\item{methods}{(character) vector of methods to use for importance calculations}
+\item{methods}{(character) vector of methods to use for importance calculations (see details)}
 
 \item{nboot}{(integer) number of bootstrap samples to use (or zero for no bootstrapping)}
 
@@ -22,7 +22,7 @@ bootImp(df, y, methods = c("iv", "chi2", "rf", "gbm", "be", "bl"),
 
 \item{nabin}{(logical) whether to include an additional bin for missing values in chi2/iv}
 
-\item{control}{(list) list parameters to pass to each modeling function to override the defaults (see details)}
+\item{control}{(list) parameters to pass to each modeling function to override/augment defaults (see details)}
 }
 \value{
 a list containing the following elements:
@@ -34,7 +34,7 @@ a list containing the following elements:
 \description{
 A normalized feature importance value is calculated for each potential predictor with
 respect to all of the \code{methods} provided in the call. In addition, average importance
-and average rank is calculated for each predictor across all methods. Right now only 
+and average rank are calculated for each predictor across all methods. Right now only 
 classification is supported, so \code{y} should be a binary numeric variable. Regression 
 methods (pearson/spearman correlations, anova) may be supported in the future.
 }
@@ -43,21 +43,24 @@ Using the \code{df} of predictors and \code{y} response variable supplied, featu
 scores will be calculated for each of the \code{methods} supplied in the call. Supported methods 
 and the associated variable importance metrics are described below:
 
-\item{iv} {bootstrap-averaged Information Value statistic based on binned predictor values}
-\item{chi2} {bootstrap-averaged Chi-Squared statistic based on binned predictor values} 
-\item{rf} {MeanDecreaseAccuracy variable importance from a RandomForest model}
-\item{gbm} {RelativeInfluence variable importance from a GBM model}
-\item{be} {bootstrap-averaged GCV reduction variable importance from MARS/Earth models}
-\item{bl} {bootstrap-averaged univariate AUC for the predictors selected by Lasso models}
+\itemize{
+\item{\strong{iv} - bootstrap-averaged Information Value based on binned predictor values}
+\item{\strong{chi2} - bootstrap-averaged Chi-Squared based on binned predictor values} 
+\item{\strong{rf} - MeanDecreaseAccuracy variable importance metric from a single RandomForest model}
+\item{\strong{gbm} - RelativeInfluence variable importance metric from a single GBM model}
+\item{\strong{be} - bootstrap-averaged GCV reduction variable importance metric from MARS/Earth models}
+\item{\strong{bl} - bootstrap-averaged univariate AUC for the set of predictors selected by Lasso models}
+}
 
 As the RF/GBM methods already include inherent bootstrapping in the tree ensembles each
 of those models is run only once. Importance scores from the other methods are derived
 via bootstrap averaging to reduce variance and increase the stability of importance metrics.
 If you want to specify alternate parameters for each of the modeling methods, you can pass
-them as lists within the \code{control} parameter. For each method you want to use, pass
-named arguments as list items within a list where the name matches the method name. See the
-examples for how this works. Be careful with overriding the defaults as all combinations of
-parameters have not been fully tested!
+them as lists within the main \code{control} parameter. For each method you want to use, pass
+named arguments as list items within a list where the outer name matches the method name (e.g. 'rf') 
+See the examples for how this works. Any method parameters passed in this way will either
+override matching defaults or be added as additional parameters to the model. Be careful 
+with overriding the defaults as all combinations of parameters have not been fully tested!
 }
 \examples{
 library(caret)
@@ -74,8 +77,8 @@ res$varImp.plot
 res$methods
 res$params
 
-controls <- list('rf'  = list(ntree = 200, mtry = 5, nodesize = 10, importance = TRUE),
-                'gbm' = list(distribution = 'bernoulli', n.trees = 100, shrinkage = 0.25, cv.folds = 10)
+controls <- list('rf' = list(ntree = 200, mtry = 5, nodesize = 10, importance = TRUE),
+                'gbm' = list(n.trees = 100, shrinkage = 0.25, cv.folds = 10)
                 )
 res <- bootImp(credit, 'Class', control = controls)
 res$varImp.df

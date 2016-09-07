@@ -1,30 +1,34 @@
-#' Predictor clustering and cluster summary extraction
+#' Predictor Clustering and Cluster Summary Variable Extraction
 #' 
-#' Perform hierarchical clustering on a set of numeric predictor variables on the basis of 
-#' correlation distance. Create a summary variable for each cluster to use in dimension reduction.
+#' Perform agglomerative (hierarchical) clustering on a set of numeric predictor variables on the basis of 
+#' absolute correlation distance. Create a summary variable for each cluster to use for dimension reduction.
 #' 
-#' @param x (data frame) data frame containing numeric predictors to be clustered
-#' @param y (numeric) response variable (to look at x-y correlations)
-#' @param corr.min (numeric) minimum correlation required to agglomerate variables into clusters
+#' @param x (data frame) data frame containing the set of numeric predictors to be clustered
+#' @param y (numeric) the intended response variable (to generate x-y correlations)
+#' @param corr.min (numeric) minimum correlation required to join variables into clusters
 #' @param clus.summary (character) method used to extract a summary variable for each cluster (see details)
-#' @param corr.method (character) which correlation coefficient to use: c('pearson', 'spearman')
-#' @param corr.use (character) how to deal with missing values: c('complete.obs', 'pairwise.complete.obs')
-#' @param clus.method (character) how to calculate linkages for agglomerative clustering: c('complete', 'single', 'centroid')
+#' @param corr.method (character) which correlation coefficient to use: \code{c('pearson', 'spearman')}
+#' @param corr.use (character) how to deal with missing values: \code{c('complete.obs', 'pairwise.complete.obs')}
+#' @param clus.method (character) how to calculate linkages: \code{c('complete', 'single', 'centroid')}
 #' 
 #' @details 
-#' Variables will be agglomerated into clusters on the basis of correlation distance (1 - abs(cor)) using
-#' a hierarchical clustering algorithm (hclust). The resulting dendogram will be cut based on the value
+#' Variables will be agglomerated into clusters on the basis of absolute correlation distance (1 - abs(cor)) 
+#' using a hierarchical clustering algorithm (hclust). The resulting dendogram will be cut based on the value
 #' of \code{corr.min} supplied by the user, such that all clusters contain variables with linkage correlations
 #' of at least \code{corr.min}. A single summary variable will be created for each cluster based on the value
-#' of \code{clus.summary} supplied by the user:
-#' \item{max.pw} {original variable with highest average pairwise correlation amongst cluster variables}
-#' \item{max.y} {original variable with highest correlation with the response (\code{y})}
-#' \item{avg.x} {average of standardized variables within the cluster (cluster centroid)}
-#' \item{pc.1} {first principal component of cluster variables}
+#' of \code{clus.summary} supplied by the user, with behavior detailed below. For all variables not linked into
+#' a cluster, the original variable is returned as the "summary" measure unchanged.
+#' \itemize{
+#' \item{\strong{max.pw} - original variable with highest average pairwise correlation amongst cluster variables}
+#' \item{\strong{max.y} - original variable with highest correlation with the response (\code{y})}
+#' \item{\strong{avg.x} - average of standardized variables within the cluster for each observation}
+#' \item{\strong{pc.1} - first principal component of cluster variables}
+#' }
 #' 
 #' @return a list containing the following elements:
 #' \item{nvar} {number of variables in \code{x}}
 #' \item{nclust} {number of created clusters}
+#' \item{vif} {VIF values for each original variable in \code{x}}
 #' \item{clusters} {a list for each cluster containing the number of variables in the cluster, 
 #' the names of the variables in the cluster, all pairwise correlations, and predictor-response correlations)}
 #' \item{summaries} {a data frame containing the summary variables (one for each cluster)}
@@ -32,11 +36,10 @@
 #' \item{params} {a list of all parameter values passed in the original call}
 #'  
 #' @examples 
-#' library(dplyr)
 #' library(caret)
 #' data("ChemicalManufacturingProcess")
-#' x <- select(ChemicalManufacturingProcess, -Yield)
-#' y <- ChemicalManufacturingProcess$Yield
+#' x <- ChemicalManufacturingProcess[,-1]
+#' y <- ChemicalManufacturingProcess[, 1]
 #' res <- varCluster(x, y, corr.min = 0.75, clus.summary = 'pc.1', corr.method = 'spearman', corr.use = 'complete.obs')
 #' res$nvar
 #' res$nclust
@@ -85,14 +88,25 @@ varCluster <- function(x, y, corr.min = sqrt(2)/2, clus.summary = 'max.pw', corr
     clustree <- hclust(distmat, method = clus.method)
     clusters <- cutree(clustree, h = 1 - corr.min)
     
-    # initialize results list and record input parameters
+    # initialize root results list and store [nvar, nclust, vif] overall values
 
-    res                <- list()
-    res[['nvar']]      <- ncol(x)
-    res[['nclust']]    <- length(unique(clusters))
+    res             <- list()
+    res[['nvar']]   <- ncol(x)
+    res[['nclust']] <- length(unique(clusters))
+    
+    efn <- function(e) {
+        warning('VIF could not be calculated due to correlation matrix singularitiy')
+        setNames(rep(NA, length = ncol(x)), names(x))
+    }
+    res[['vif']] <- tryCatch(diag(solve(cor(x, use = 'complete.obs'))), error = efn)
+    
+    # initialize result sub-lists
+    
     res[['clusters']]  <- list()
     res[['summaries']] <- list()
     res[['params']]    <- list()
+    
+    # store all input parameters in a list to return
     
     res[['params']][['corr.min']]     <- corr.min
     res[['params']][['clus.summary']] <- clus.summary
@@ -108,8 +122,8 @@ varCluster <- function(x, y, corr.min = sqrt(2)/2, clus.summary = 'max.pw', corr
         
         cvars <- x[,names(clusters[clusters == c]), drop = FALSE]
         cname <- paste0('c', c)
-        res[['clusters']][[cname]] <- list()
         
+        res[['clusters']][[cname]]              <- list()
         res[['clusters']][[cname]][['nvars']]   <- ncol(cvars)
         res[['clusters']][[cname]][['varlist']] <- names(cvars)
         
@@ -156,16 +170,17 @@ varCluster <- function(x, y, corr.min = sqrt(2)/2, clus.summary = 'max.pw', corr
                 stop('invalid value selected for [clus.summary]')
             }
             
-        } # end if
-    }     # end for
+        } # end if  (single-variable clusters)
+    }     # end for (main cluster loop)
     
     # create corrplot object and return results
     
     toplot <- x[,names(sort(clusters))]
-    names(toplot) <- abbreviate(names(sort(clusters)), minlength = 4)
-    res[['corrplot']]  <- ggcorr(toplot, c(corr.use, corr.method), hjust = 1, size = 2, layout.exp = 2)
+    names(toplot) <- abbreviate(names(sort(clusters)), minlength = 6)
+    res[['corrplot']]  <- ggcorr(toplot, c(corr.use, corr.method), hjust = 1, size = 100/ncol(x), 
+                                 layout.exp = 2, low = 'blue', mid = 'white', high = 'red')
+    
     res[['summaries']] <- data.frame(res[['summaries']])
     res
     
 }
-

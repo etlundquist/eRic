@@ -1,40 +1,43 @@
-#' Bootstrapped feature importance via several filter/model-based methods
+#' Bootstrapped Feature Importance via Filter/Model-Based Selection Methods
 #' 
 #' A normalized feature importance value is calculated for each potential predictor with
 #' respect to all of the \code{methods} provided in the call. In addition, average importance
-#' and average rank is calculated for each predictor across all methods. Right now only 
+#' and average rank are calculated for each predictor across all methods. Right now only 
 #' classification is supported, so \code{y} should be a binary numeric variable. Regression 
 #' methods (pearson/spearman correlations, anova) may be supported in the future.
 #'
 #' @param df (data frame) data frame containing the response and all potential predictors
 #' @param y (character) binary response variable name (must be a variable within \code{df})
-#' @param methods (character) vector of methods to use for importance calculations
+#' @param methods (character) vector of methods to use for importance calculations (see details)
 #' @param nboot (integer) number of bootstrap samples to use (or zero for no bootstrapping)
 #' @param nbins (integer) number of bins to use for chi-squared / information value calculations
 #' @param nplot (integer) number of variables to show on the final \code{varImp.plot}
 #' @param nabin (logical) whether to include an additional bin for missing values in chi2/iv
-#' @param control (list) list parameters to pass to each modeling function to override the defaults (see details)
+#' @param control (list) parameters to pass to each modeling function to override/augment defaults (see details)
 #' 
 #' @details 
 #' Using the \code{df} of predictors and \code{y} response variable supplied, feature importance
 #' scores will be calculated for each of the \code{methods} supplied in the call. Supported methods 
 #' and the associated variable importance metrics are described below:
 #' 
-#' \item{iv} {bootstrap-averaged Information Value statistic based on binned predictor values}
-#' \item{chi2} {bootstrap-averaged Chi-Squared statistic based on binned predictor values} 
-#' \item{rf} {MeanDecreaseAccuracy variable importance from a RandomForest model}
-#' \item{gbm} {RelativeInfluence variable importance from a GBM model}
-#' \item{be} {bootstrap-averaged GCV reduction variable importance from MARS/Earth models}
-#' \item{bl} {bootstrap-averaged univariate AUC for the predictors selected by Lasso models}
+#' \itemize{
+#' \item{\strong{iv} - bootstrap-averaged Information Value based on binned predictor values}
+#' \item{\strong{chi2} - bootstrap-averaged Chi-Squared based on binned predictor values} 
+#' \item{\strong{rf} - MeanDecreaseAccuracy variable importance metric from a single RandomForest model}
+#' \item{\strong{gbm} - RelativeInfluence variable importance metric from a single GBM model}
+#' \item{\strong{be} - bootstrap-averaged GCV reduction variable importance metric from MARS/Earth models}
+#' \item{\strong{bl} - bootstrap-averaged univariate AUC for the set of predictors selected by Lasso models}
+#' }
 #' 
 #' As the RF/GBM methods already include inherent bootstrapping in the tree ensembles each
 #' of those models is run only once. Importance scores from the other methods are derived
 #' via bootstrap averaging to reduce variance and increase the stability of importance metrics.
 #' If you want to specify alternate parameters for each of the modeling methods, you can pass
-#' them as lists within the \code{control} parameter. For each method you want to use, pass
-#' named arguments as list items within a list where the name matches the method name. See the
-#' examples for how this works. Be careful with overriding the defaults as all combinations of
-#' parameters have not been fully tested!
+#' them as lists within the main \code{control} parameter. For each method you want to use, pass
+#' named arguments as list items within a list where the outer name matches the method name (e.g. 'rf') 
+#' See the examples for how this works. Any method parameters passed in this way will either
+#' override matching defaults or be added as additional parameters to the model. Be careful 
+#' with overriding the defaults as all combinations of parameters have not been fully tested!
 #' 
 #' @return a list containing the following elements:
 #' \item{varImp.df} {a data frame containing average importance, average rank, and method-specific importance for all predictors}
@@ -57,8 +60,8 @@
 #' res$methods
 #' res$params
 #' 
-#' controls <- list('rf'  = list(ntree = 200, mtry = 5, nodesize = 10, importance = TRUE),
-#'                 'gbm' = list(distribution = 'bernoulli', n.trees = 100, shrinkage = 0.25, cv.folds = 10)
+#' controls <- list('rf' = list(ntree = 200, mtry = 5, nodesize = 10, importance = TRUE),
+#'                 'gbm' = list(n.trees = 100, shrinkage = 0.25, cv.folds = 10)
 #'                 )
 #' res <- bootImp(credit, 'Class', control = controls)
 #' res$varImp.df
@@ -232,20 +235,20 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
         
         rf.main    <- list(formula = as.formula(paste(y, '~', '.')), data = df.rf[complete.cases(df.rf),]) 
         rf.default <- list(ntree = 500, mtry = floor(sqrt(ncol(df.rf)-1)), importance = TRUE, do.trace = 25)
+        rf.params  <- c(rf.main, rf.default)
         
         if (!is.null(control[['rf']])) {
-          rf.params <- c(rf.main, control[['rf']])
-          params[['rf']] <- control[['rf']]
-        } 
-        else {
-          rf.params <- c(rf.main, rf.default)
-          params[['rf']] <- rf.default
+            for (i in 1:length(control[['rf']])) {
+                rf.params[[names(control[['rf']])[i]]] <- control[['rf']][[i]]
+            }
         }
         
         print('Calculating Feature Importance via Random Forest (rf)...')
         rf.fit <- do.call(randomForest, rf.params)
         rf.imp <- rf.fit$importance
         var.imp[['rf']] <- data.frame(var = row.names(rf.imp), rf.imp = rf.imp[,'MeanDecreaseAccuracy'], stringsAsFactors = FALSE)
+        params[['rf']]  <- rf.params[-c(1,2)]
+        
         
     }
     
@@ -256,20 +259,19 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
       
         gbm.main    <- list(formula = as.formula(paste(y, '~', '.')), data = df)
         gbm.default <- list(distribution = 'bernoulli', n.trees = 250, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, cv.folds = 5, class.stratify.cv = TRUE)
-        
+        gbm.params  <- c(gbm.main, gbm.default)
+                         
         if (!is.null(control[['gbm']])) {
-          gbm.params <- c(gbm.main, control[['gbm']])
-          params[['gbm']] <- control[['gbm']]
-        } 
-        else {
-          gbm.params <- c(gbm.main, gbm.default)
-          params[['gbm']] <- gbm.default
+            for (i in 1:length(control[['gbm']])) {
+                gbm.params[[names(control[['gbm']])[i]]] <- control[['gbm']][[i]]
+            }
         }
       
         print('Calculating Feature Importance via Gradient Boosted Machine (gbm)...')
         gbm.fit <- do.call(gbm, gbm.params)
         var.imp[['gbm']] <- invisible(summary(gbm.fit, n.trees = gbm.perf(gbm.fit, plot.it = FALSE), plotit = FALSE)) %>% 
         mutate(var = as.character(var), gbm.imp = rel.inf, rel.inf = NULL)
+        params[['gbm']] <- gbm.params[-c(1,2)]
         
     }
 
@@ -279,17 +281,14 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
     if ('be' %in% methods) {
       
         be.main <- list(formula = as.formula(paste(y, '~', '.')), data = df[complete.cases(df),])
-        
         if (nboot == 0) be.default <- list(pmethod = 'backward', degree = 1)
         else            be.default <- list(pmethod = 'backward', degree = 1, B = nboot)
+        be.params <- c(be.main, be.default)
 
         if (!is.null(control[['be']])) {
-          be.params <- c(be.main, control[['be']])
-          params[['be']] <- control[['be']]
-        } 
-        else {
-          be.params <- c(be.main, be.default)
-          params[['be']] <- be.default
+            for (i in 1:length(control[['be']])) {
+                be.params[[names(control[['be']])[i]]] <- control[['be']][[i]]
+            }
         }
       
         print('Calculating Feature Importance via Bagged Earth (be)...')
@@ -303,10 +302,18 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
         impvec    <- setNames(as.list(be.imp$expanded), be.imp$expanded)
         expanded  <- setNames(lapply(as.list(names(df)), expand.levels, df), names(df))
         basevars  <- lapply(as.list(impvec), get.basevar, expanded)
+        
+        # fill in unexpanded factor names for those variables not showing up in importance
+        for (i in 1:length(basevars)) {
+            if (is.null(basevars[[i]])) {
+                basevars[[i]] <- names(basevars[i])
+            }
+        }
 
         # sum importance across levels within each factor (total GCV reduction for the factor variable)
         crosswalk <- data.frame(var = unlist(basevars), expanded = names(basevars), stringsAsFactors = FALSE)
         var.imp[['be']] <- inner_join(be.imp, crosswalk, by = 'expanded') %>% dplyr::group_by(var) %>% dplyr::summarize(be.imp = sum(be)) %>% dplyr::ungroup() 
+        params[['be']]  <- be.params[-c(1,2)]
         
     }
     
@@ -315,21 +322,24 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
     
     if ('bl' %in% methods) {
         
-        ls.boot <- function(b) {
+        bl.default <- list(family = 'binomial', alpha = 1, nlambda = 100, standardize = TRUE, nfolds = 5)
+        bl.params  <- bl.default
+        
+        if (!is.null(control[['bl']])) {
+            for (i in 1:length(control[['bl']])) {
+                bl.params[[names(control[['bl']])[i]]] <- control[['bl']][[i]]
+            }
+        }
+        
+        ls.boot <- function(b, bl.params) {
           
             # construct the model matrix and response vector needed for glmnet()
             x.b <- model.matrix(as.formula('~ .'), data = model.frame(df[b, setdiff(names(df), y)], na.action = na.pass))
             y.b <- df[b, y]
             
-            bl.main    <- list(x = x.b[complete.cases(x.b),], y = y.b[complete.cases(x.b)])
-            bl.default <- list(family = 'binomial', alpha = 1, nlambda = 100, standardize = TRUE, nfolds = 5)
-            
-            if (!is.null(control[['bl']])) {
-              bl.params <- c(bl.main, control[['bl']])
-            } 
-            else {
-              bl.params <- c(bl.main, bl.default)
-            }
+            # add the current bootstrap data set to the passed parameter list
+            bl.main   <- list(x = x.b[complete.cases(x.b),], y = y.b[complete.cases(x.b)])
+            bl.params <- c(bl.main, bl.params)
             
             # extract the coefficients from the cross-validated best value for lambda model
             ls.fit.b <- do.call(cv.glmnet, bl.params)
@@ -352,13 +362,11 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
         # average variable importance across all bootstrap samples
         print('Calculating Feature Importance via Bagged Lasso (bl)...')
         
-        ls.boot.imp <- lapply(bootind, ls.boot)  
+        ls.boot.imp <- lapply(bootind, ls.boot, bl.params)  
         names <- attr(ls.boot.imp[[1]], 'names')
         ls.boot.imp <- cbind(names, as.data.frame(matrix(unlist(ls.boot.imp), nrow = length(names)))) %>% mutate(names = as.character(names))
         var.imp[['bl']] <- data.frame(var = ls.boot.imp$names, bl.imp = apply(ls.boot.imp[, -1, drop = FALSE], 1, mean), stringsAsFactors = FALSE)
-        
-        if (!is.null(control[['bl']])) params[['bl']] <- control[['bl']]
-        else                           params[['bl']] <- list(family = 'binomial', alpha = 1, nlambda = 100, standardize = TRUE, nfolds = 5)
+        params[['bl']]  <- bl.params
 
     }
     
@@ -390,6 +398,6 @@ bootImp <- function(df, y, methods = c('iv', 'chi2', 'rf', 'gbm', 'be', 'bl'), n
     # return a list with full information in the DF and a summary ggplot object
     #--------------------------------------------------------------------------
     
-    list(varImp.df = var.imp.df, varImp.plot = var.imp.plot, methods = methods, params = params)
+    list(varImp.df = as.data.frame(var.imp.df), varImp.plot = var.imp.plot, methods = methods, params = params)
     
 }
