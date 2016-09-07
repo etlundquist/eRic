@@ -4,7 +4,7 @@ An R package containing functions I've written while working on predictive model
 
 ## Installation Options
 
-1. Install via `devtools` straight from GitHub:
+Install via `devtools` straight from GitHub:
 
 ```
 install.packages("devtools")
@@ -12,7 +12,7 @@ library("devtools")
 install_github("etlundquist/eRic")
 ```
 
-2. Download the tarball `eRic_0.0.0.9000.tar.gz` and install from source:
+Download the tarball `eRic_0.0.0.9000.tar.gz` and install from source:
 
 ```
 install.packages('/path/to/tarball/eRic_0.0.0.9000.tar.gz', repos = NULL)
