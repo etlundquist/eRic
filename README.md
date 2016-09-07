@@ -1,6 +1,18 @@
 # eRic
 
-An R package containing functions I've written while working on predictive modeling projects. The functions are briefly described here, but documented in more detail in the function-specific help (.rd) files. 
+An R package containing functions I've written while working on predictive modeling projects. The functions are briefly described below, but documented in more detail in the function-specific help (.rd) files. All content can be downloaded/installed and then used like any other package after following the installation instructions below.
+
+## Installation Options
+
+1. Install via `devtools` straight from GitHub
+
+```
+install.packages("devtools")
+library("devtools")
+install_github("etlundquist/eRic")
+```
+
+2. Download the tarball `eRic_0.0.0.9000.tar.gz` and install from source
 
 ## Included Functions:
 
