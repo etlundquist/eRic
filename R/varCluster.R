@@ -26,15 +26,16 @@
 #' }
 #' 
 #' @return a list containing the following elements:
-#' \item{nvar} {number of variables in \code{x}}
-#' \item{nclust} {number of created clusters}
-#' \item{vif} {VIF values for each original variable in \code{x}}
-#' \item{clusters} {a list for each cluster containing the number of variables in the cluster, 
+#' \itemize{
+#' \item{\strong{nvar} - number of variables in \code{x}}
+#' \item{\strong{nclust} - number of created clusters}
+#' \item{\strong{vif} - VIF values for each original variable in \code{x}}
+#' \item{\strong{clusters} - a list for each cluster containing the number of variables in the cluster, 
 #' the names of the variables in the cluster, all pairwise correlations, and predictor-response correlations)}
-#' \item{summaries} {a data frame containing the summary variables (one for each cluster)}
-#' \item{corrplot} {a ggplot2 object visualizing the correlations amongst all predictor variables}
-#' \item{params} {a list of all parameter values passed in the original call}
-#'  
+#' \item{\strong{summaries} - a data frame containing the summary variables (one for each cluster)}
+#' \item{\strong{corrplot} - a ggplot2 object visualizing the correlations amongst all predictor variables}
+#' \item{\strong{params} - a list of all parameter values passed in the original call}
+#' } 
 #' @examples 
 #' library(caret)
 #' data("ChemicalManufacturingProcess")

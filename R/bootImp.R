@@ -40,11 +40,12 @@
 #' with overriding the defaults as all combinations of parameters have not been fully tested!
 #' 
 #' @return a list containing the following elements:
-#' \item{varImp.df} {a data frame containing average importance, average rank, and method-specific importance for all predictors}
-#' \item{varImp.plot} {a ggplot2 object showing average normalized importance across all methods for the top \code{nplot} predictors} 
-#' \item{methods} {the character vector of methods passed in the call}
-#' \item{params} {a list containing the additional parameters used for each model}
-#'  
+#' \itemize{
+#' \item{\strong{varImp.df} - a data frame containing average importance, average rank, and method-specific importance for all predictors}
+#' \item{\strong{varImp.plot} - a ggplot2 object showing average normalized importance across all methods for the top \code{nplot} predictors} 
+#' \item{\strong{methods} - the character vector of methods passed in the call}
+#' \item{\strong{params} - a list containing the additional parameters used for each model}
+#' } 
 #' @examples 
 #' library(caret)
 #' data(GermanCredit, package = 'caret')

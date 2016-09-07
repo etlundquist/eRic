@@ -17,8 +17,10 @@ plotKS(a, b, la = "Distribution A", lb = "Distribution B")
 }
 \value{
 a list containing the following elements:
-\item{ks.stat} {KS statistic}
-\item{ks.plot} {a ggplot2 object for the KS plot}
+\itemize{
+\item{\strong{ks.stat} - KS statistic}
+\item{\strong{ks.plot} - a ggplot2 object for the KS plot} 
+}
 }
 \description{
 Plot the cumulative distributions of each class by a score variable and calculate the KS

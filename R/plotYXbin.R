@@ -40,11 +40,12 @@
 #' be solved by using quantile binning and/or reducing the number of bins created.
 #' 
 #' @return a list containing the following elements:
-#' \item{iv} {Information Value}
-#' \item{chi2} {ChiSq Statistic} 
-#' \item{yPlot} {ggplot object of \code{ymetric} vs. \code{bins}}
-#' \item{vPlot} {ggplot object of bin sizes or volume}
-#'  
+#' \itemize{
+#' \item{\strong{iv} - Information Value}
+#' \item{\strong{chi2} - ChiSq Statistic} 
+#' \item{\strong{yPlot} - ggplot object of \code{ymetric} vs. \code{bins}}
+#' \item{\strong{vPlot} - ggplot object of bin sizes or volume}
+#' } 
 #' @examples 
 #' data(diamonds, package = 'ggplot2')
 #' y  <- as.numeric(diamonds$price > mean(diamonds$price))

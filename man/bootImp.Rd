@@ -26,10 +26,12 @@ bootImp(df, y, methods = c("iv", "chi2", "rf", "gbm", "be", "bl"),
 }
 \value{
 a list containing the following elements:
-\item{varImp.df} {a data frame containing average importance, average rank, and method-specific importance for all predictors}
-\item{varImp.plot} {a ggplot2 object showing average normalized importance across all methods for the top \code{nplot} predictors} 
-\item{methods} {the character vector of methods passed in the call}
-\item{params} {a list containing the additional parameters used for each model}
+\itemize{
+\item{\strong{varImp.df} - a data frame containing average importance, average rank, and method-specific importance for all predictors}
+\item{\strong{varImp.plot} - a ggplot2 object showing average normalized importance across all methods for the top \code{nplot} predictors} 
+\item{\strong{methods} - the character vector of methods passed in the call}
+\item{\strong{params} - a list containing the additional parameters used for each model}
+}
 }
 \description{
 A normalized feature importance value is calculated for each potential predictor with

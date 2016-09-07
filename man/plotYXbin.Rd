@@ -26,10 +26,12 @@ plotYXbin(y, x, ymetric = "proportion", xsplit = "quantile", nbins = 10,
 }
 \value{
 a list containing the following elements:
-\item{iv} {Information Value}
-\item{chi2} {ChiSq Statistic} 
-\item{yPlot} {ggplot object of \code{ymetric} vs. \code{bins}}
-\item{vPlot} {ggplot object of bin sizes or volume}
+\itemize{
+\item{\strong{iv} - Information Value}
+\item{\strong{chi2} - ChiSq Statistic} 
+\item{\strong{yPlot} - ggplot object of \code{ymetric} vs. \code{bins}}
+\item{\strong{vPlot} - ggplot object of bin sizes or volume}
+}
 }
 \description{
 Statistics for \code{y} are plotted with respect to each level or bin of \code{x}. Plotted 

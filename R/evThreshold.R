@@ -46,10 +46,11 @@
 #' can be displayed on the same plot as the other metrics.
 #'
 #' @return a list containing the following elements:
-#' \item{best.threshold} {optimal probability threshold}
-#' \item{best.ev} {unit expected value given the optimal probability threshold} 
-#' \item{plot.metrics} {a plot showing various performance metrics with respect to cutoff threshold}
-#' 
+#' \itemize{
+#' \item{\strong{best.threshold} - optimal probability threshold}
+#' \item{\strong{best.ev} - unit expected value given the optimal probability threshold} 
+#' \item{\strong{plot.metrics} - a plot showing various performance metrics with respect to cutoff threshold}
+#' }
 #' @examples 
 #' library(gbm)
 #' library(caret)

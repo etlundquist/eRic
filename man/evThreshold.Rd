@@ -17,9 +17,11 @@ evThreshold(response, pprob, crMatrix, plot.points = 100)
 }
 \value{
 a list containing the following elements:
-\item{best.threshold} {optimal probability threshold}
-\item{best.ev} {unit expected value given the optimal probability threshold} 
-\item{plot.metrics} {a plot showing various performance metrics with respect to cutoff threshold}
+\itemize{
+\item{\strong{best.threshold} - optimal probability threshold}
+\item{\strong{best.ev} - unit expected value given the optimal probability threshold} 
+\item{\strong{plot.metrics} - a plot showing various performance metrics with respect to cutoff threshold}
+}
 }
 \description{
 Calculate an optimal probability threshold for a classification problem based on 

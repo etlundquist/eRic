@@ -9,9 +9,10 @@
 #' @param lb (character) legend label for the second class 
 #' 
 #' @return a list containing the following elements:
-#' \item{ks.stat} {KS statistic}
-#' \item{ks.plot} {a ggplot2 object for the KS plot} 
-#'  
+#' \itemize{
+#' \item{\strong{ks.stat} - KS statistic}
+#' \item{\strong{ks.plot} - a ggplot2 object for the KS plot} 
+#' } 
 #' @examples 
 #' a <- rnorm(5000, 0, 2)
 #' b <- rnorm(5000, 1, 3)
