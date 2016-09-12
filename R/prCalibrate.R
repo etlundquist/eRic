@@ -60,8 +60,9 @@ prCalibrate <- function(responses, predictions, nbins=10, cmodel=NULL) {
     
     hPlot <- ggplot(data.frame(method = c(rep('Original',   length(predictions)), 
                                           rep('Calibrated', length(calibrated))), 
-                               prob   = c(predictions, calibrated)))                                +
-    geom_histogram(aes(x = prob, fill = method), bins = nbins, color = 'black', alpha = 0.50)     +
+                               prob   = c(predictions, calibrated)))                              +
+    geom_histogram(aes(x = prob, fill = method), 
+                   bins = nbins, color = 'black', alpha = 0.50, position = 'identity')            +
     coord_cartesian(xlim = c(0, 1)) + scale_x_continuous(breaks = seq(0, 1, 0.25))                + 
     scale_fill_manual(name = '', breaks = c('Original', 'Calibrated'), values = c('blue', 'red')) +
     theme_bw() + theme(legend.position = 'bottom')                                                +
@@ -80,15 +81,28 @@ prCalibrate <- function(responses, predictions, nbins=10, cmodel=NULL) {
 
 library(gbm)
 library(caret)
-library(randomForest)
+library(pROC)
+
 data("GermanCredit")
 credit <- GermanCredit
 credit$Class <- as.numeric(credit$Class == 'Good')
+credit <- credit[,-nearZeroVar(credit)]
 
-fit      <- randomForest(as.factor(Class) ~ ., data = credit, ntree = 1000, mtry = 5)
-old.prob <- predict(fit, type = 'prob')
+set.seed(1492)
+tind <- createDataPartition(credit$Class, p = 0.75, times = 1, list = FALSE)
+trdf <- credit[ tind,]
+vldf <- credit[-tind,]
 
-res <- prCalibrate(credit$Class, old.prob[,2], nbins = 20)
+fit   <- gbm(Class ~ ., data = trdf, n.trees = 100, shrinkage = 0.1)
+probs <- predict(fit, vldf, n.trees = gbm.perf(fit), type = 'response')
+res   <- prCalibrate(vldf$Class, probs, nbins = 10)
+
+sum((probs > 0.5) == credit$Class)/length(credit$Class)
+sum((res$calibrated > 0.5) == credit$Class)/length(credit$Class)
+
+roc(credit$Class, probs, auc = TRUE)
+roc(credit$Class, res$calibrated, auc = TRUE)
+
 res$old.logloss
 res$cal.logloss
                       
